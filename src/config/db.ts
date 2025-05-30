@@ -8,7 +8,6 @@ export const connectDB = async () => {
       throw new Error('MONGODB_URI is not defined in .env');
     }
     await mongoose.connect(mongoUri, {
-      // MongoDB Atlas-specific options
       ssl: true,
       retryWrites: true,
       w: 'majority',
