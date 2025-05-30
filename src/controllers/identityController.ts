@@ -1,123 +1,98 @@
-import { Request, Response, NextFunction } from 'express';
-import { Contact } from '../models/contactModel';
-import { logger } from '../utils/logger';
+import { Request, Response } from 'express';
+import mongoose from 'mongoose';
+import Contact, { IContact } from '../models/contactModel';
 
-interface IdentifyRequest {
-  email?: string;
-  phoneNumber?: string;
-}
-
-interface IdentifyResponse {
-  contact: {
-    primaryContatctId: number;
-    emails: string[];
-    phoneNumbers: string[];
-    secondaryContactIds: number[];
-  };
-}
-
-export const identifyContact = async (
-  req: Request<{}, {}, IdentifyRequest>,
-  res: Response<IdentifyResponse>,
-  next: NextFunction
-) => {
+export const identifyContact = async (req: Request, res: Response) => {
   try {
     const { email, phoneNumber } = req.body;
 
     if (!email && !phoneNumber) {
-      return res.status(400).json({ contact: { error: 'Email or phoneNumber required' } } as any);
+      return res.status(400).json({ message: 'At least email or phoneNumber is required' });
     }
 
-    // Find contacts by email or phoneNumber
-    const query = [];
-    if (email) query.push({ email });
-    if (phoneNumber) query.push({ phoneNumber });
-    const contacts = await Contact.find({ $or: query, deletedAt: null }).sort({ createdAt: 1 });
+    // Build dynamic OR conditions
+    const orConditions = [];
+    if (email) orConditions.push({ email });
+    if (phoneNumber) orConditions.push({ phoneNumber });
 
-    let primaryContact: any;
-    let secondaryContacts: any[] = [];
+    const matchingContacts: IContact[] = await Contact.find(
+      orConditions.length > 0 ? { $or: orConditions } : {}
+    );
 
-    if (contacts.length === 0) {
-      // Create new primary contact
-      const newContact = new Contact({
+    let allContacts: IContact[] = [...matchingContacts];
+    let primaryContact: IContact;
+
+    if (matchingContacts.length === 0) {
+      // No existing contact → create new primary
+      const newContact = await Contact.create({
         email,
         phoneNumber,
         linkPrecedence: 'primary',
       });
-      await newContact.save();
+
       return res.status(200).json({
         contact: {
-          primaryContatctId: newContact.id,
-          emails: newContact.email ? [newContact.email] : [],
-          phoneNumbers: newContact.phoneNumber ? [newContact.phoneNumber] : [],
+          primaryContactId: newContact._id,
+          emails: [newContact.email],
+          phoneNumbers: [newContact.phoneNumber],
           secondaryContactIds: [],
         },
       });
     }
 
-    // Identify primary contact (earliest created)
-    primaryContact = contacts.find((c) => c.linkPrecedence === 'primary') || contacts[0];
-    if (primaryContact.linkPrecedence !== 'primary') {
-      primaryContact.linkPrecedence = 'primary';
-      await primaryContact.save();
-    }
+    // Check if we need to add new secondary contact (new info)
+    const hasEmail = matchingContacts.some(c => c.email === email);
+    const hasPhone = matchingContacts.some(c => c.phoneNumber === phoneNumber);
 
-    // Collect secondary contacts
-    secondaryContacts = contacts.filter((c) => c.id !== primaryContact.id);
+    if (!hasEmail || !hasPhone) {
+      const primary = matchingContacts.find(c => c.linkPrecedence === 'primary') || matchingContacts[0];
 
-    // Check for new information
-    const isNewInfo =
-      (email && !contacts.some((c) => c.email === email)) ||
-      (phoneNumber && !contacts.some((c) => c.phoneNumber === phoneNumber));
-
-    if (isNewInfo) {
-      const newSecondary = new Contact({
+      const newSecondary = await Contact.create({
         email,
         phoneNumber,
-        linkedId: primaryContact.id,
         linkPrecedence: 'secondary',
+        linkedId: primary._id,
       });
-      await newSecondary.save();
-      secondaryContacts.push(newSecondary);
+
+      allContacts.push(newSecondary);
     }
 
-    // Link other primaries to the oldest primary
-    const otherPrimaries = contacts.filter(
-      (c) => c.linkPrecedence === 'primary' && c.id !== primaryContact.id
-    );
-    for (const otherPrimary of otherPrimaries) {
-      otherPrimary.linkPrecedence = 'secondary';
-      otherPrimary.linkedId = primaryContact.id;
-      otherPrimary.updatedAt = new Date();
-      await otherPrimary.save();
-      secondaryContacts.push(otherPrimary);
-    }
+    // Determine oldest primary contact
+    primaryContact = allContacts
+      .filter(c => c.linkPrecedence === 'primary')
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
-    // Compile response
-    const emails = Array.from(
-      new Set(
-        [primaryContact.email, ...secondaryContacts.map((c) => c.email)].filter((e) => e)
-      )
-    );
-    const phoneNumbers = Array.from(
-      new Set(
-        [primaryContact.phoneNumber, ...secondaryContacts.map((c) => c.phoneNumber)].filter(
-          (p) => p
-        )
-      )
-    );
-    const secondaryContactIds = secondaryContacts.map((c) => c.id);
+    // Ensure all others point to the primary
+    const updatePromises = allContacts.map(async (contact) => {
+      if (
+        contact._id.toString() !== primaryContact._id.toString() &&
+        contact.linkPrecedence === 'primary'
+      ) {
+        contact.linkPrecedence = 'secondary';
+        contact.linkedId = primaryContact._id;
+        await contact.save();
+      }
+    });
 
-    res.status(200).json({
+    await Promise.all(updatePromises);
+
+    // Consolidate response data
+    const emails = Array.from(new Set(allContacts.map(c => c.email).filter(Boolean)));
+    const phoneNumbers = Array.from(new Set(allContacts.map(c => c.phoneNumber).filter(Boolean)));
+    const secondaryContactIds = allContacts
+      .filter(c => c.linkPrecedence === 'secondary')
+      .map(c => c._id);
+
+    return res.status(200).json({
       contact: {
-        primaryContatctId: primaryContact.id,
+        primaryContactId: primaryContact._id,
         emails,
         phoneNumbers,
         secondaryContactIds,
       },
     });
   } catch (error) {
-    logger.error('Error in identifyContact:', error);
-    next(error);
+    console.error('Error in identifyContact:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
