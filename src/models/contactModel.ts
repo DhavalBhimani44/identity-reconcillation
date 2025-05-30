@@ -1,72 +1,23 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-interface IContact extends Document {
-  id: number; 
-  phoneNumber?: string; 
-  email?: string; 
-  linkedId?: number; 
-  linkPrecedence: 'primary' | 'secondary'; 
+export interface IContact extends Document {
+  _id: mongoose.Types.ObjectId;
+  email?: string;
+  phoneNumber?: string;
+  linkPrecedence: 'primary' | 'secondary';
+  linkedId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?: Date;
 }
 
-const contactSchema = new Schema<IContact>(
+const ContactSchema = new Schema<IContact>(
   {
-    id: {
-      type: Number,
-      required: true,
-      unique: true, // Ensure unique custom ID
-    },
-    phoneNumber: {
-      type: String,
-      sparse: true, // Allows multiple null values
-      index: true, // Index for faster queries
-    },
-    email: {
-      type: String,
-      sparse: true, // Allows multiple null values
-      index: true, // Index for faster queries
-    },
-    linkedId: {
-      type: Number,
-      sparse: true, // Allows null for primary contacts
-    },
-    linkPrecedence: {
-      type: String,
-      enum: ['primary', 'secondary'],
-      required: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    deletedAt: {
-      type: Date,
-      sparse: true, // Allows null for non-deleted records
-    },
+    email: { type: String },
+    phoneNumber: { type: String },
+    linkPrecedence: { type: String, enum: ['primary', 'secondary'], required: true },
+    linkedId: { type: Schema.Types.ObjectId, ref: 'Contact' },
   },
-  {
-    timestamps: true, // Automatically manage createdAt and updatedAt
-  }
+  { timestamps: true }
 );
 
-contactSchema.pre('save', async function (next) {
-  if (this.isNew && !this.id) {
-    try {
-      const lastContact = await Contact.findOne().sort({ id: -1 });
-      this.id = lastContact ? lastContact.id + 1 : 1;
-    } catch (error) {
-      return next(error as Error);
-    }
-  }
-  next();
-});
-
-contactSchema.index({ email: 1, phoneNumber: 1 }, { sparse: true });
-
-export const Contact = model<IContact>('Contact', contactSchema);
+export default mongoose.model<IContact>('Contact', ContactSchema);
