@@ -8,11 +8,11 @@ It is designed to **identify and consolidate user identities** based on `email` 
 
 ## 🚀 Features
 
-* ✅ Identify contacts using email or phone number
-* ✅ Link secondary contacts to primary contact
-* ✅ Avoid duplicate data and enforce link precedence
-* ✅ MongoDB + Mongoose backend
-* ✅ Express.js REST API
+* Identify contacts using email or phone number
+* Link secondary contacts to primary contact
+* Avoid duplicate data and enforce link precedence
+* MongoDB + Mongoose backend
+* Express.js REST API
 
 ---
 
@@ -54,7 +54,7 @@ npm install
 
 ### 3️⃣ Configure MongoDB
 
-In your `.env` file (or hardcoded in `server.ts`), set:
+In your `.env` file, set:
 
 ```
 MONGODB_URI = <your-mongo-uri>
