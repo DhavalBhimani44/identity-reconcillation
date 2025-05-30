@@ -12,6 +12,7 @@ export interface IContact extends Document {
 
 const ContactSchema = new Schema<IContact>(
   {
+    id: { type: String, unique: true, sparse: true },
     email: { type: String },
     phoneNumber: { type: String },
     linkPrecedence: { type: String, enum: ['primary', 'secondary'], required: true },
