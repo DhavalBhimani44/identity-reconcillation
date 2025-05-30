@@ -78,6 +78,12 @@ The server will run on:
 http://localhost:3000
 ```
 
+Or you can test the **deployed API** at:
+
+```
+https://identity-reconcillation-ww91.onrender.com
+```
+
 ---
 
 ## 🛠️ MongoDB Notes
@@ -166,8 +172,36 @@ Identify or create a contact.
 
 ---
 
+## 🧪 Testing the API with Postman
+
+1️⃣ Open Postman and create a **new request**.
+
+2️⃣ Set method to **POST** and URL to:
+
+```
+https://identity-reconcillation-ww91.onrender.com/api/identify
+```
+
+3️⃣ Go to the **Body** tab → Select **raw** → Choose **JSON** format.
+
+4️⃣ Enter a request body like:
+
+```json
+{
+  "email": "test@example.com",
+  "phoneNumber": "19192"
+}
+```
+
+5️⃣ Click **Send**.
+
+✅ You should see a JSON response with the contact details.
+
+You can test various combinations (email only, phone only, both) to validate reconciliation logic.
+
+---
+
 ## 🤝 Contributing
 
 Pull requests are welcome!
 Please open an issue first to discuss what you want to change.
-
