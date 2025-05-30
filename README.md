@@ -20,12 +20,17 @@ It is designed to **identify and consolidate user identities** based on `email` 
 
 ```
 /src
+  /config
+    db.ts                  → MongoDB connector
   /controllers
-    contactController.ts   → contains the identifyContact logic
+    identityController.ts  → contains the identifyContact logic
+  /middleware
+    errorHandler.ts        → Handling errors
   /models
     contactModel.ts        → Mongoose schema and model
-  app.ts                   → Express app setup
-  server.ts                → App start and DB connection
+  /routes
+    identityRoutes.ts      → Redirecting /identify
+  index.ts                 → Express app setup
 ```
 
 ---
@@ -64,6 +69,7 @@ Make sure MongoDB is running.
 
 ```bash
 npm run dev
+npm start
 ```
 
 The server will run on:
