@@ -1,6 +1,7 @@
-# Bitespeed Identity Reconciliation API
+# Identity Reconciliation API
+![Title-Image](assets/title-image.png)
 
-This project implements the **Bitespeed Identity Reconciliation API challenge**.
+This project implements the **Identity Reconciliation API challenge**.
 
 It is designed to **identify and consolidate user identities** based on `email` and `phoneNumber`, handling multiple records and linking related contacts.
 
