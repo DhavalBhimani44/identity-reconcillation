@@ -1,0 +1,47 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "connections": 500,
+  "duration": 60,
+  "workers": 4,
+  "timeout": 10,
+  "pipelining": 1,
+  "scenarios": [
+    {
+      "name": "Identify API - Standard Request",
+      "url": "/api/identify",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "test@example.com",
+        "phoneNumber": "1234567890"
+      },
+      "weight": 70
+    },
+    {
+      "name": "Identify API - Email Only",
+      "url": "/api/identify",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "email.only@example.com"
+      },
+      "weight": 15
+    },
+    {
+      "name": "Identify API - Phone Only",
+      "url": "/api/identify",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "phoneNumber": "9876543210"
+      },
+      "weight": 15
+    }
+  ]
+} 
