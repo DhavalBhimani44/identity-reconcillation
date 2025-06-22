@@ -122,7 +122,7 @@ async function runLoadTest() {
       console.log("\n=== Generating Test Data ===");
       await executeCommand("npx", [
         "ts-node",
-        path.join(__dirname, "generate-test-data.ts"),
+        "./load-testing/scripts/generate-test-data.ts",
       ]);
     }
 
@@ -136,7 +136,7 @@ async function runLoadTest() {
       case TEST_TYPES.ADVANCED:
         testCommand = [
           "ts-node",
-          path.join(__dirname, "advanced-load-tester.ts"),
+          "./load-testing/scripts/advanced-load-tester.ts",
         ];
         if (config.configFile) {
           testCommand.push(`--config=${config.configFile}`);
@@ -147,7 +147,7 @@ async function runLoadTest() {
       case TEST_TYPES.DATA_DRIVEN:
         testCommand = [
           "ts-node",
-          path.join(__dirname, "data-driven-load-tester.ts"),
+          "./load-testing/scripts/data-driven-load-tester.ts",
         ];
         if (config.configFile) {
           testCommand.push(`--config=${config.configFile}`);
@@ -159,7 +159,7 @@ async function runLoadTest() {
       default:
         testCommand = [
           "ts-node",
-          path.join(__dirname, "load-tester.ts"),
+          "./load-testing/scripts/load-tester.ts",
           "--url",
           config.url,
           "--connections",
@@ -184,7 +184,7 @@ async function runLoadTest() {
         console.log(`Found results file: ${resultsFile}`);
         await executeCommand("npx", [
           "ts-node",
-          path.join(__dirname, "visualize-results.ts"),
+          "./load-testing/scripts/visualize-results.ts",
           resultsFile,
         ]);
       } else {
